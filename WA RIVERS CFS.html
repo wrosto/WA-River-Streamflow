@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Washington Rivers CFS Flows</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Washington Rivers CFS Flows</h1>
+    <table id="riverTable">
+        <thead>
+            <tr>
+                <th>River</th>
+                <th>CFS Flow</th>
+                <th>Last Updated</th>
+            </tr>
+        </thead>
+        <tbody id="riverTableBody">
+            <!-- Table data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Function to fetch and update CFS flows for Washington rivers
+        async function fetchAndUpdateCFSFlows() {
+            try {
+                // Fetch data from USGS API
+                const response = await fetch("https://waterservices.usgs.gov/nwis/iv/?format=json&stateCd=wa&parameterCd=00060");
+                const data = await response.json();
+
+                // Get the current year
+                const currentYear = new Date().getFullYear();
+
+                // Clear existing table data
+                document.getElementById('riverTableBody').innerHTML = '';
+
+                // Populate table with CFS flow data for the current year
+                data.value.timeSeries.forEach(series => {
+                    const lastUpdated = new Date(series.values[0].value[0].dateTime);
+                    const year = lastUpdated.getFullYear();
+
+                    // Include only records from the current year
+                    if (year === currentYear) {
+                        const siteName = series.sourceInfo.siteName;
+                        const cfsValue = series.values[0].value[0].value;
+                        const lastUpdatedFormatted = new Date(lastUpdated).toLocaleString();
+
+                        const newRow = `
+                            <tr>
+                                <td>${siteName}</td>
+                                <td>${cfsValue} CFS</td>
+                                <td>${lastUpdatedFormatted}</td>
+                            </tr>
+                        `;
+                        document.getElementById('riverTableBody').innerHTML += newRow;
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching and updating CFS flows:', error);
+            }
+        }
+
+        // Call the function initially and set it to run every minute (60000 milliseconds)
+        fetchAndUpdateCFSFlows();
+        setInterval(fetchAndUpdateCFSFlows, 60000); // Update every minute
+    </script>
+</body>
+</html>
